@@ -5,7 +5,6 @@ Coalescent Distortion Index (CDI) computed from VCF genotype data
 ## Definition
 
 For a diploid individual with two homologous chromosomes \(A\) and \(B\), and a reference sequence \(R\), we define the **Coalescent Distortion Index (CDI)** as
-## Definition of CDI
 
 CDI = (d(R,A) + d(R,B))/2 - d(A,B)
 
@@ -86,9 +85,9 @@ CDI = #(1/1) - #(0/1)/2
 
 where:
 
-- #(1/1) is the **number of sites** at which the individual is homozygous for the alternative allele,
-- #(0/1) is the **number of heterozygous sites**,
-- # denotes a **count of sites**, not a frequency.
+- \#(1/1) is the **number of sites** at which the individual is homozygous for the alternative allele,
+- \#(0/1) is the **number of heterozygous sites**,
+- \# denotes a **count of sites**, not a frequency.
 
 Sites with genotype 0/0 do not contribute and are therefore omitted from the expression.
 
