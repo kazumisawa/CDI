@@ -1,18 +1,18 @@
-# CDI
-Coalescent Distortion Index (CDI) computed from VCF genotype data
 # CDI: Coalescent Distortion Index
+Coalescent Distortion Index (CDI) computed from VCF genotype data
+
 
 ## Definition
 
 For a diploid individual with two homologous chromosomes \(A\) and \(B\), and a reference sequence \(R\), we define the **Coalescent Distortion Index (CDI)** as
 
-\[
+$$
 \mathrm{CDI}
 =
 \frac{d(R,A) + d(R,B)}{2}
 -
-d(A,B),
-\]
+d(A,B)
+$$
 
 where \(d(X,Y)\) denotes the genetic distance between sequences \(X\) and \(Y\).
 
