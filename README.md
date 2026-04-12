@@ -19,14 +19,6 @@ In words:
 ## Gene genealogy interpretation
 
 We assume a genomic region with **no recombination**, so that the three sequences \(R\), \(A\), and \(B\) share a single local gene genealogy:
-    R
-    |
-    |
-    O
-   / \
-  A   B
-  Here:
-
 - O is the branching point of R, A, and B,
 - branch lengths represent accumulated mutations,
 - genetic distances are additive along the tree.
@@ -34,7 +26,9 @@ We assume a genomic region with **no recombination**, so that the three sequence
 Under this additive tree metric, we have
 
 d(R,A) = d(O,R) + d(O,A),
+
 d(R,B) = d(O,R) + d(O,B),
+
 d(A,B) = d(O,A) + d(O,B).
 
 Substituting these relations into the definition of CDI yields
