@@ -6,7 +6,7 @@ import sys
 # --------------------------------------------------
 # Usage
 # --------------------------------------------------
-# python CDI_window.py input.vcf.gz 1000000 > output.tsv
+# python CDI.py input.vcf.gz 1000000 > output.tsv
 #
 # input.vcf.gz : bgzip + tabix-ed VCF
 # 1000000      : window size (bp)
