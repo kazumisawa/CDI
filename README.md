@@ -97,6 +97,15 @@ Therefore:
 
 > **The Coalescent Distortion Index quantifies how much the reference sequence deviates from the average coalescent position defined by an individual’s two homologous chromosomes, after accounting for within-individual heterozygosity.**
 
+--------------------------------------------------
+Usage
+--------------------------------------------------
+python CDI.py input.vcf.gz 1000000 > output.tsv
+
+input.vcf.gz : bgzip + tabix-ed VCF
+1000000      : window size (bp)
+--------------------------------------------------
+
 This interpretation is consistent across
 gene genealogies,
 additive distance models,
