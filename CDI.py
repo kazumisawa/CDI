@@ -1,62 +1,131 @@
-from cyvcf2 import VCF   # bgzip された VCF (.vcf.gz) を高速に読むためのライブラリ
-import sys              # コマンドライン引数を受け取るため
+#!/usr/bin/env python3
 
-# -----------------------------
-# 入力の取得
-# -----------------------------
+from cyvcf2 import VCF
+import sys
 
-vcf = VCF(sys.argv[1])  # 第1引数：VCFファイル（.vcf.gz）
-region = sys.argv[2]    # 第2引数：解析する染色体領域（例 "chr1:100000-200000"）
+# --------------------------------------------------
+# Usage
+# --------------------------------------------------
+# python CDI_window.py input.vcf.gz 1000000 > output.tsv
+#
+# input.vcf.gz : bgzip + tabix-ed VCF
+# 1000000      : window size (bp)
+# --------------------------------------------------
 
-# -----------------------------
-# サンプル情報の取得
-# -----------------------------
+if len(sys.argv) != 3:
+    sys.stderr.write(
+        f"Usage: {sys.argv[0]} input.vcf.gz window_size\n"
+    )
+    sys.exit(1)
 
-samples = vcf.samples   # VCF に含まれるサンプル ID のリスト
-n = len(samples)        # サンプル数（個体数）
+vcf_file = sys.argv[1]
+window_size = int(sys.argv[2])
 
-# -----------------------------
-# CDI 計算に必要なカウンタ
-# -----------------------------
-# CDI = #(1/1) − 1/2 × #(0/1)
-# なので、それぞれを数える
+# --------------------------------------------------
+# Open VCF
+# --------------------------------------------------
 
-hom_alt = [0] * n       # ALT/ALT（1/1）：reference と異なるホモ接合サイト数
-het     = [0] * n       # REF/ALT（0/1）：ヘテロ接合サイト数
+vcf = VCF(vcf_file)
 
-# -----------------------------
-# 指定領域内の variant を走査
-# -----------------------------
+samples = vcf.samples
+n_samples = len(samples)
 
-for rec in vcf(region):         # 指定した染色体領域の各 variant を順に処理
-    if len(rec.ALT) != 1:       # multi-allelic site（ALT が複数ある）
-        continue                # CDI の理論は biallelic 前提なので無視
+# --------------------------------------------------
+# Output header
+# --------------------------------------------------
 
-    # rec.genotypes は各サンプルについて
-    # (a1, a2, phased) のタプルを返す
-    #   a1, a2 : 0=REF, 1=ALT, -1=missing
-    #   phased : True/False（今回は不要）
+print(
+    "chrom\tstart\tend\t" +
+    "\t".join(samples)
+)
 
-    for i, (a1, a2, _) in enumerate(rec.genotypes):
-        if a1 < 0 or a2 < 0:    # missing genotype（./. など）
-            continue            # 情報がないのでカウントしない
+# --------------------------------------------------
+# Process each chromosome
+# --------------------------------------------------
 
-        if a1 == a2 == 1:       # 1/1（ALT ホモ接合）
-            hom_alt[i] += 1     # #(1/1) をインクリメント
+for chrom, chrom_length in zip(vcf.seqnames, vcf.seqlens):
 
-        elif a1 != a2:          # 0/1 または 1/0（ヘテロ接合）
-            het[i] += 1         # #(0/1) をインクリメント
+    if chrom_length is None:
+        continue
 
-        # 0/0（REF ホモ接合）の場合は
-        # CDI への寄与が 0 なので何もしない
+    # ----------------------------------------------
+    # Generate windows
+    # ----------------------------------------------
 
-# -----------------------------
-# CDI の計算と出力
-# -----------------------------
+    start = 1
 
-for i, s in enumerate(samples): # 各サンプル（個体）について
-    # CDI = #(1/1) − 1/2 × #(0/1)
-    cdi = hom_alt[i] - 0.5 * het[i]
+    while start <= chrom_length:
 
-    # サンプルIDとCDIを tab 区切りで出力
-    print(f"{s}\t{cdi}")
+        end = min(
+            start + window_size - 1,
+            chrom_length
+        )
+
+        region = f"{chrom}:{start}-{end}"
+
+        # ------------------------------------------
+        # initialize counters
+        # ------------------------------------------
+
+        hom_alt = [0] * n_samples
+        het = [0] * n_samples
+
+        # ------------------------------------------
+        # scan variants in region
+        # ------------------------------------------
+
+        for rec in vcf(region):
+
+            # CDI assumes biallelic sites
+            if len(rec.ALT) != 1:
+                continue
+
+            for i, (a1, a2, phased) in enumerate(rec.genotypes):
+
+                # missing genotype
+                if a1 < 0 or a2 < 0:
+                    continue
+
+                # ALT/ALT  -> +1
+                if a1 == 1 and a2 == 1:
+                    hom_alt[i] += 1
+
+                # HET -> -0.5
+                elif a1 != a2:
+                    het[i] += 1
+
+                # REF/REF contributes 0
+                else:
+                    pass
+
+        # ------------------------------------------
+        # CDI calculation
+        # CDI = #(1/1) - 0.5 * #(0/1)
+        # ------------------------------------------
+
+        cdi_values = []
+
+        for i in range(n_samples):
+            cdi = - hom_alt[i] + 0.5 * het[i]
+            cdi_values.append(str(cdi))
+
+        # ------------------------------------------
+        # output one line per window
+        # ------------------------------------------
+
+        print(
+            chrom,
+            start,
+            end,
+            *cdi_values,
+            sep="\t",
+            flush=True
+        )
+        print(
+            f"{chrom}:{start}-{end}",
+            file=sys.stderr,
+            flush=True
+        )
+
+        start += window_size
+
